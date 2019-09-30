@@ -2,11 +2,18 @@ module Main exposing (..)
 
 import Browser
 import Browser.Navigation as Nav
-import Element exposing (Element, layout, el, text, row, column, image, height, width, px, inFront) --alignRight, fill, rgb255, spacing, centerY, padding)
+import Element exposing (Element, layout, el, text, row, column, image, height, width, px, inFront, rgb, rgb255, padding, paddingXY, spacing)
 import Element.Input exposing (button)
+import Element.Background as Back
+import Element.Border as Bord
+import Element.Font as Font
 import String.Interpolate exposing(interpolate)
 import Url
 
+
+
+white = rgb 1 1 1
+colorPrimary = rgb255 0x00 0x7b 0xff
 
 ---- MODEL ----
 
@@ -75,7 +82,12 @@ viewPlayer player =
             ]
         
 timerButton size msg btnText =
-    button [] { onPress = Just msg, label = text btnText }
+    button [ paddingXY 10 4
+           , Bord.rounded 4
+           , Back.color colorPrimary
+           , Font.color white
+           ]
+        { onPress = Just msg, label = text btnText }
 
 view : Model -> Browser.Document Msg
 view model =
@@ -83,7 +95,7 @@ view model =
     , body = [ layout [] <|
           column []
               [ row [] <| List.map viewPlayer model.players
-              , row []
+              , row [ padding 20, spacing 10 ]
                   [ timerButton 6 StartAll "start all"
                   , timerButton 6 StopAll "STOP     ALL"
                   , timerButton 12 ResetAll "RESET ALL"
