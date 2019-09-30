@@ -11,28 +11,28 @@ import Url
 ---- MODEL ----
 
 
-type alias Family =
+type alias Player =
     { name : String
     , picture : String
     , remainingTime : Int
-    , buttonText : String
+    , running : Bool
     }
 
 type alias Model =
-    { families : List Family
+    { players : List Player
     }
 
 
 defaultTime = 3600
-families = ["Greyjoy", "Baratheon", "Lanister", "Stark", "Tyrell", "Martell"]
+players = ["Greyjoy", "Baratheon", "Lanister", "Stark", "Tyrell", "Martell"]
 
-initFamily : Int -> String -> Family
-initFamily time name =
-    Family name (interpolate "/public/img/family/{0}.jpg" [name]) time "WHAT?"
+initPlayer : Int -> String -> Player
+initPlayer time name =
+    Player name (interpolate "/public/img/family/{0}.jpg" [name]) time False
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
-    ( Model <| List.map (initFamily defaultTime) families, Cmd.none )
+    ( Model <| List.map (initPlayer defaultTime) players, Cmd.none )
 
 
 
@@ -41,7 +41,7 @@ init _ url key =
 type Msg
     = UrlChanged Url.Url
     | LinkClicked Browser.UrlRequest
-    | Toggle Family
+    | Toggle Player
     | StartAll
     | StopAll
     | ResetAll
@@ -67,11 +67,11 @@ formatTime seconds =
     in
         interpolate "{0}:{1}:{2}" <| List.map String.fromInt [hours, minutes, afterMinutes]
 
-viewFamily family =
-    el [ inFront <| text <| formatTime family.remainingTime ] <|
+viewPlayer player =
+    el [ inFront <| text <| formatTime player.remainingTime ] <|
         column []
-            [ image [ height <| px 570, width <| px 205 ] { src = family.picture, description = family.name }
-            , button [] { onPress =  Just <| Toggle family, label = text family.buttonText }
+            [ image [ height <| px 570, width <| px 205 ] { src = player.picture, description = player.name }
+            , button [] { onPress =  Just <| Toggle player, label = text <| if player.running then "STOP" else "START" }
             ]
         
 timerButton size msg btnText =
@@ -82,7 +82,7 @@ view model =
     { title = "Foobar"
     , body = [ layout [] <|
           column []
-              [ row [] <| List.map viewFamily model.families
+              [ row [] <| List.map viewPlayer model.players
               , row []
                   [ timerButton 6 StartAll "start all"
                   , timerButton 6 StopAll "STOP     ALL"
