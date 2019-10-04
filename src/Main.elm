@@ -161,8 +161,8 @@ timerButton msg btnText =
         { onPress = Just msg, label = el [ centerX ] <| text btnText }
 
 imageSize model =
-  let sixthWidth = round <| (toFloat model.width) / 6
-      proportionalHeight = round <| 570.0 * (toFloat sixthWidth) / 205.0
+  let sixthWidth = (model.width - 20) // 6
+      proportionalHeight = 570 * sixthWidth // 205
   in
   [ height <| px proportionalHeight
   , width <| px sixthWidth
