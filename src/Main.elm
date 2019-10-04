@@ -138,10 +138,10 @@ formatTime seconds =
 
 viewPlayer ftSize imgSize player =
     el [ inFront <|
-           el [ centerX, alignBottom, moveUp 20
+           el [ centerX, alignBottom, moveUp 10
               , Bord.rounded 8
               , alpha 0.6, Back.color white ] <|
-           button [  spacing 10, padding 20 ]
+           button [  spacing 4, padding 4 ]
              { onPress =  Just <| Toggle player
              , label =
                column [ spacing 5 ]
