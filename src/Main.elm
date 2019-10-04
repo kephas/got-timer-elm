@@ -31,7 +31,7 @@ type alias Model =
 
 
 defaultTime = 3600
-players = ["Greyjoy", "Baratheon", "Lanister", "Stark", "Tyrell", "Martell"]
+players = ["Greyjoy", "Baratheon", "Lannister", "Stark", "Tyrell", "Martell"]
 
 initPlayer : Int -> String -> Player
 initPlayer time name =
