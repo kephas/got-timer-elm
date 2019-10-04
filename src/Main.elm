@@ -83,11 +83,18 @@ formatTime seconds =
         interpolate "{0}:{1}:{2}" <| List.map paddedNumber [hours, minutes, afterMinutes]
 
 viewPlayer player =
-    el [ inFront <| text <| formatTime player.remainingTime ] <|
-        column []
-            [ image [ height <| px 570, width <| px 205 ] { src = player.picture, description = player.name }
-            , button [] { onPress =  Just <| Toggle player, label = text <| if player.running then "STOP" else "START" }
-            ]
+    el [ inFront <|
+           button [ centerX, alignBottom, moveUp 20, spacing 10, padding 20
+                  , Bord.width 2, Bord.color white
+                  ] { onPress =  Just <| Toggle player
+                    , label =
+                      column [ ]
+                        [ el [ centerX ] <| text <| formatTime player.remainingTime
+                        , el [ centerX ] <| text <| if player.running then "STOP" else "START"
+                        ]
+                    }
+       ] <|
+      image [ height <| px 570, width <| px 205 ] { src = player.picture, description = player.name }
         
 timerButton size msg btnText =
     button [ paddingXY 10 4
