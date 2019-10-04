@@ -1,6 +1,8 @@
 module Main exposing (..)
 
 import Browser
+import Browser.Dom as Dom
+import Browser.Events as Ev
 import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Input exposing (button)
@@ -8,6 +10,7 @@ import Element.Background as Back
 import Element.Border as Bord
 import Element.Font as Font
 import String.Interpolate exposing(interpolate)
+import Task
 import Time
 import Url
 
@@ -27,7 +30,9 @@ type alias Player =
     }
 
 type alias Model =
-    { players : List Player
+    { height : Int
+    , width : Int
+    , players : List Player
     }
 
 
@@ -38,12 +43,17 @@ initPlayer : Int -> String -> Player
 initPlayer time name =
     Player name (interpolate "%PUBLIC_URL%/img/family/{0}.jpg" [name]) time False
 
-model0 = Model <| List.map (initPlayer defaultTime) players0
+model0 = Model 0 0 <| List.map (initPlayer defaultTime) players0
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( model0, Cmd.none )
+    ( model0, getViewport )
 
+getViewport = Task.perform viewportResize Dom.getViewport
+
+viewportResize : Dom.Viewport -> Msg
+viewportResize viewport =
+  Resize (round viewport.viewport.width) (round viewport.viewport.height)
 
 
 ---- UPDATE ----
@@ -54,6 +64,7 @@ type Msg
     | StopAll
     | ResetAll
     | Tick Time.Posix
+    | Resize Int Int
 
 
 toggleOne : Player -> Player
@@ -91,15 +102,20 @@ update msg model =
       ( { model | players = runAll False model.players }, Cmd.none)
 
     ResetAll ->
-      ( model0, Cmd.none)
+      ( model0, getViewport)
 
     Tick _ ->
       ( { model | players = tickRunning model.players }, Cmd.none)
 
+    Resize width height ->
+      ( { model | height = height, width = width }, Cmd.none)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Time.every 1000 Tick
+  Sub.batch
+    [ Time.every 1000 Tick
+    , Ev.onResize Resize
+    ]
 
 
 ---- VIEW ----
@@ -120,7 +136,7 @@ formatTime seconds =
     in
         interpolate "{0}:{1}:{2}" <| List.map paddedNumber [hours, minutes, afterMinutes]
 
-viewPlayer player =
+viewPlayer imgSize player =
     el [ inFront <|
            el [ centerX, alignBottom, moveUp 20
               , Bord.rounded 8
@@ -134,7 +150,7 @@ viewPlayer player =
                  ]
              }
        ] <|
-      image [ height <| px 570, width <| px 205 ] { src = player.picture, description = player.name }
+      image imgSize { src = player.picture, description = player.name }
         
 timerButton msg btnText =
     button [ height <| px 60, width fill, paddingXY 10 4
@@ -144,12 +160,20 @@ timerButton msg btnText =
            ]
         { onPress = Just msg, label = el [ centerX ] <| text btnText }
 
+imageSize model =
+  let sixthWidth = round <| (toFloat model.width) / 6
+      proportionalHeight = round <| 570.0 * (toFloat sixthWidth) / 205.0
+  in
+  [ height <| px proportionalHeight
+  , width <| px sixthWidth
+  ]
+
 view : Model -> Browser.Document Msg
 view model =
     { title = "Foobar"
     , body = [ layout [ height fill ] <|
           column [ height fill ]
-              [ wrappedRow [] <| List.map viewPlayer model.players
+              [ wrappedRow [] <| List.map (viewPlayer (imageSize model)) model.players
               , row [ padding 20, spacing 10, width fill ]
                   [ timerButton StartAll "START ALL"
                   , timerButton StopAll "STOP ALL"
