@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Browser
 import Browser.Navigation as Nav
-import Element exposing (Element, layout, el, text, row, column, image, height, width, px, inFront, rgb, rgb255, padding, paddingXY, spacing)
+import Element exposing (..)
 import Element.Input exposing (button)
 import Element.Background as Back
 import Element.Border as Bord
