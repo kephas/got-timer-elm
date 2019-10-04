@@ -136,7 +136,7 @@ formatTime seconds =
     in
         interpolate "{0}:{1}:{2}" <| List.map paddedNumber [hours, minutes, afterMinutes]
 
-viewPlayer imgSize player =
+viewPlayer ftSize imgSize player =
     el [ inFront <|
            el [ centerX, alignBottom, moveUp 20
               , Bord.rounded 8
@@ -145,18 +145,18 @@ viewPlayer imgSize player =
              { onPress =  Just <| Toggle player
              , label =
                column [ spacing 5 ]
-                 [ el [ centerX ] <| text <| formatTime player.remainingTime
-                 , el [ centerX ] <| text <| if player.running then "STOP" else "START"
+                 [ el [ ftSize, centerX ] <| text <| formatTime player.remainingTime
+                 , el [ ftSize, centerX ] <| text <| if player.running then "STOP" else "START"
                  ]
              }
        ] <|
       image imgSize { src = player.picture, description = player.name }
         
-timerButton msg btnText =
+timerButton size msg btnText =
     button [ height <| px 60, width fill, paddingXY 10 4
            , Bord.rounded 4
            , Back.color colorPrimary
-           , Font.color white
+           , Font.color white, size
            ]
         { onPress = Just msg, label = el [ centerX ] <| text btnText }
 
@@ -168,17 +168,22 @@ imageSize model =
   , width <| px sixthWidth
   ]
 
+fontSize model =
+  Font.size <| model.height // 50
+
 view : Model -> Browser.Document Msg
 view model =
+  let ftSize = fontSize model
+  in
     { title = "GoT Timer"
     , body = [ layout [ height fill ] <|
           column [ height fill ]
-              [ wrappedRow [] <| List.map (viewPlayer (imageSize model)) model.players
+              [ wrappedRow [] <| List.map (viewPlayer ftSize (imageSize model)) model.players
               , row [ padding 20, spacing 10, width fill ]
-                  [ timerButton StartAll "START ALL"
-                  , timerButton StopAll "STOP ALL"
+                  [ timerButton ftSize StartAll "START ALL"
+                  , timerButton ftSize StopAll "STOP ALL"
                   ]
-              , el [ alignBottom ] <| timerButton ResetAll "RESET ALL"
+              , el [ alignBottom ] <| timerButton ftSize ResetAll "RESET ALL"
               ]
              ]
     }
