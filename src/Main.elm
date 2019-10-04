@@ -8,6 +8,7 @@ import Element.Background as Back
 import Element.Border as Bord
 import Element.Font as Font
 import String.Interpolate exposing(interpolate)
+import Time
 import Url
 
 
@@ -52,6 +53,7 @@ type Msg
     | StartAll
     | StopAll
     | ResetAll
+    | Tick Time.Posix
 
 
 toggleOne : Player -> Player
@@ -66,6 +68,14 @@ runAll : Bool -> List Player -> List Player
 runAll run players =
   List.map (\p -> { p | running = run }) players
 
+
+tickOne : Player -> Player
+tickOne player =
+  { player | remainingTime = player.remainingTime - 1 }
+
+tickRunning : List Player -> List Player
+tickRunning players =
+  List.map (\p -> if p.running then tickOne p else p) players
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -83,10 +93,13 @@ update msg model =
     ResetAll ->
       ( model0, Cmd.none)
 
+    Tick _ ->
+      ( { model | players = tickRunning model.players }, Cmd.none)
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Time.every 1000 Tick
 
 
 ---- VIEW ----
