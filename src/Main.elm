@@ -102,7 +102,7 @@ view model =
     { title = "Foobar"
     , body = [ layout [] <|
           column []
-              [ row [] <| List.map viewPlayer model.players
+              [ wrappedRow [] <| List.map viewPlayer model.players
               , row [ padding 20, spacing 10 ]
                   [ timerButton 6 StartAll "start all"
                   , timerButton 6 StopAll "STOP     ALL"
