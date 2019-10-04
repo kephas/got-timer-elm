@@ -161,7 +161,7 @@ timerButton size msg btnText =
         { onPress = Just msg, label = el [ centerX ] <| text btnText }
 
 imageSize model =
-  let sixthWidth = (model.width - 20) // 6
+  let sixthWidth = (model.width - 20) // 3
       proportionalHeight = 570 * sixthWidth // 205
   in
   [ height <| px proportionalHeight
@@ -169,7 +169,7 @@ imageSize model =
   ]
 
 fontSize model =
-  Font.size <| model.height // 50
+  Font.size <| model.height // 30
 
 view : Model -> Browser.Document Msg
 view model =
