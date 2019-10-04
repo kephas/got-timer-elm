@@ -54,9 +54,34 @@ type Msg
     | ResetAll
 
 
+toggleOne : Player -> Player
+toggleOne player =
+  { player | running = not player.running }
+
+toggleOnly : Player -> List Player -> List Player
+toggleOnly player players =
+  List.map (\p -> if p == player then toggleOne p else p) players
+
+runAll : Bool -> List Player -> List Player
+runAll run players =
+  List.map (\p -> { p | running = run }) players
+
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+  case msg of
+    Toggle player ->
+      ( { model | players = toggleOnly player model.players }, Cmd.none)
+
+    StartAll ->
+      ( { model | players = runAll True model.players }, Cmd.none)
+
+    StopAll ->
+      ( { model | players = runAll False model.players }, Cmd.none)
+
+    ResetAll ->
+      ( model0, Cmd.none)
 
 
 subscriptions : Model -> Sub Msg
