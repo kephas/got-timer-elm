@@ -66,13 +66,21 @@ subscriptions model =
 
 ---- VIEW ----
 
+paddedNumber : Int -> String
+paddedNumber n =
+  let raw = String.fromInt n
+  in if n < 10 then
+       "0" ++ raw
+     else
+       raw
+
 formatTime seconds =
     let hours = seconds // 3600
         afterHours = remainderBy 3600 seconds
         minutes = afterHours // 60
         afterMinutes = remainderBy 60 afterHours
     in
-        interpolate "{0}:{1}:{2}" <| List.map String.fromInt [hours, minutes, afterMinutes]
+        interpolate "{0}:{1}:{2}" <| List.map paddedNumber [hours, minutes, afterMinutes]
 
 viewPlayer player =
     el [ inFront <| text <| formatTime player.remainingTime ] <|
