@@ -109,37 +109,39 @@ formatTime seconds =
 
 viewPlayer player =
     el [ inFront <|
-           button [ centerX, alignBottom, moveUp 20, spacing 10, padding 20
-                  , Bord.width 2, Bord.color white
-                  ] { onPress =  Just <| Toggle player
-                    , label =
-                      column [ ]
-                        [ el [ centerX ] <| text <| formatTime player.remainingTime
-                        , el [ centerX ] <| text <| if player.running then "STOP" else "START"
-                        ]
-                    }
+           el [ centerX, alignBottom, moveUp 20
+              , Bord.rounded 8
+              , alpha 0.6, Back.color white ] <|
+           button [  spacing 10, padding 20 ]
+             { onPress =  Just <| Toggle player
+             , label =
+               column [ spacing 5 ]
+                 [ el [ centerX ] <| text <| formatTime player.remainingTime
+                 , el [ centerX ] <| text <| if player.running then "STOP" else "START"
+                 ]
+             }
        ] <|
       image [ height <| px 570, width <| px 205 ] { src = player.picture, description = player.name }
         
-timerButton size msg btnText =
-    button [ paddingXY 10 4
+timerButton msg btnText =
+    button [ height <| px 60, width fill, paddingXY 10 4
            , Bord.rounded 4
            , Back.color colorPrimary
            , Font.color white
            ]
-        { onPress = Just msg, label = text btnText }
+        { onPress = Just msg, label = el [ centerX ] <| text btnText }
 
 view : Model -> Browser.Document Msg
 view model =
     { title = "Foobar"
-    , body = [ layout [] <|
-          column []
+    , body = [ layout [ height fill ] <|
+          column [ height fill ]
               [ wrappedRow [] <| List.map viewPlayer model.players
-              , row [ padding 20, spacing 10 ]
-                  [ timerButton 6 StartAll "start all"
-                  , timerButton 6 StopAll "STOP     ALL"
-                  , timerButton 12 ResetAll "RESET ALL"
+              , row [ padding 20, spacing 10, width fill ]
+                  [ timerButton StartAll "START ALL"
+                  , timerButton StopAll "STOP ALL"
                   ]
+              , el [ alignBottom ] <| timerButton ResetAll "RESET ALL"
               ]
              ]
     }
