@@ -36,7 +36,7 @@ players0 = ["Greyjoy", "Baratheon", "Lannister", "Stark", "Tyrell", "Martell"]
 
 initPlayer : Int -> String -> Player
 initPlayer time name =
-    Player name (interpolate "/public/img/family/{0}.jpg" [name]) time False
+    Player name (interpolate "%PUBLIC_URL%/img/family/{0}.jpg" [name]) time False
 
 model0 = Model <| List.map (initPlayer defaultTime) players0
 
