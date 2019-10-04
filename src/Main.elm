@@ -31,24 +31,24 @@ type alias Model =
 
 
 defaultTime = 3600
-players = ["Greyjoy", "Baratheon", "Lannister", "Stark", "Tyrell", "Martell"]
+players0 = ["Greyjoy", "Baratheon", "Lannister", "Stark", "Tyrell", "Martell"]
 
 initPlayer : Int -> String -> Player
 initPlayer time name =
     Player name (interpolate "/public/img/family/{0}.jpg" [name]) time False
 
-init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url key =
-    ( Model <| List.map (initPlayer defaultTime) players, Cmd.none )
+model0 = Model <| List.map (initPlayer defaultTime) players0
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( model0, Cmd.none )
 
 
 
 ---- UPDATE ----
 
 type Msg
-    = UrlChanged Url.Url
-    | LinkClicked Browser.UrlRequest
-    | Toggle Player
+    = Toggle Player
     | StartAll
     | StopAll
     | ResetAll
@@ -126,13 +126,11 @@ view model =
 
 main : Program () Model Msg
 main =
-  Browser.application
+  Browser.document
     { init = init
     , view = view
     , update = update
     , subscriptions = subscriptions
-    , onUrlChange = UrlChanged
-    , onUrlRequest = LinkClicked
     }
 
 
