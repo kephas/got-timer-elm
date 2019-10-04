@@ -170,7 +170,7 @@ imageSize model =
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = "Foobar"
+    { title = "GoT Timer"
     , body = [ layout [ height fill ] <|
           column [ height fill ]
               [ wrappedRow [] <| List.map (viewPlayer (imageSize model)) model.players
