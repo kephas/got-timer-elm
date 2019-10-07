@@ -4,11 +4,12 @@ import Browser
 import Browser.Dom as Dom
 import Browser.Events as Ev
 import Browser.Navigation as Nav
-import Element exposing (..)
-import Element.Input exposing (button)
+import Element as El
+import Element.Input as In
 import Element.Background as Back
 import Element.Border as Bord
 import Element.Font as Font
+import Html exposing (Html)
 import String.Interpolate exposing(interpolate)
 import Task
 import Time
@@ -16,8 +17,8 @@ import Url
 
 
 
-white = rgb 1 1 1
-colorPrimary = rgb255 0x00 0x7b 0xff
+white = El.rgb 1 1 1
+colorPrimary = El.rgb255 0x00 0x7b 0xff
 
 ---- MODEL ----
 
@@ -29,11 +30,13 @@ type alias Player =
     , running : Bool
     }
 
-type alias Model =
-    { height : Int
-    , width : Int
+type alias ViewableModel =
+    { width : Int
+    , height : Int
     , players : List Player
     }
+
+type Model = Unviewable (List Player) | Viewable ViewableModel
 
 
 defaultTime = 3600
@@ -43,7 +46,7 @@ initPlayer : Int -> String -> Player
 initPlayer time name =
     Player name (interpolate "%PUBLIC_URL%/img/family/{0}.jpg" [name]) time False
 
-model0 = Model 0 0 <| List.map (initPlayer defaultTime) players0
+model0 = Unviewable <| List.map (initPlayer defaultTime) players0
 
 init : () -> ( Model, Cmd Msg )
 init _ =
@@ -91,24 +94,34 @@ tickRunning players =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  case msg of
-    Toggle player ->
-      ( { model | players = toggleOnly player model.players }, Cmd.none)
+    case model of
+        Unviewable players ->
+            case msg of
+                Resize width height ->
+                    ( Viewable { width = width, height = height, players = players }, Cmd.none )
 
-    StartAll ->
-      ( { model | players = runAll True model.players }, Cmd.none)
+                _ ->
+                    ( model, Cmd.none )
+        Viewable viewableModel ->
+            case msg of
+                Toggle player ->
+                    ( Viewable { viewableModel | players = toggleOnly player viewableModel.players }, Cmd.none)
 
-    StopAll ->
-      ( { model | players = runAll False model.players }, Cmd.none)
+                StartAll ->
+                    ( Viewable { viewableModel | players = runAll True viewableModel.players }, Cmd.none)
 
-    ResetAll ->
-      ( model0, getViewport)
+                StopAll ->
+                    ( Viewable { viewableModel | players = runAll False viewableModel.players }, Cmd.none)
 
-    Tick _ ->
-      ( { model | players = tickRunning model.players }, Cmd.none)
+                ResetAll ->
+                    ( model0, getViewport)
 
-    Resize width height ->
-      ( { model | height = height, width = width }, Cmd.none)
+                Tick _ ->
+                    ( Viewable { viewableModel | players = tickRunning viewableModel.players }, Cmd.none)
+
+                Resize width height ->
+                    ( Viewable { viewableModel | height = height, width = width }, Cmd.none)
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -136,55 +149,64 @@ formatTime seconds =
     in
         interpolate "{0}:{1}:{2}" <| List.map paddedNumber [hours, minutes, afterMinutes]
 
-viewPlayer ftSize imgSize player =
-    el [ inFront <|
-           el [ centerX, alignBottom, moveUp 10
+viewPlayer width player =
+    let fontSize = Font.size <| width // 7
+    in
+    El.el [ El.inFront <|
+           El.el [ El.centerX, El.alignBottom, El.moveUp ((toFloat width) / 10)
               , Bord.rounded 8
-              , alpha 0.6, Back.color white ] <|
-           button [  spacing 4, padding 4 ]
+              , El.alpha 0.6, Back.color white ] <|
+           In.button [  El.spacing 4, El.padding (width // 10) ]
              { onPress =  Just <| Toggle player
              , label =
-               column [ spacing 5 ]
-                 [ el [ ftSize, centerX ] <| text <| formatTime player.remainingTime
-                 , el [ ftSize, centerX ] <| text <| if player.running then "STOP" else "START"
+               El.column [ El.spacing 5 ]
+                 [ El.el [ fontSize, El.centerX ] <| El.text <| formatTime player.remainingTime
+                 , El.el [ fontSize, El.centerX ] <| El.text <| if player.running then "STOP" else "START"
                  ]
              }
        ] <|
-      image imgSize { src = player.picture, description = player.name }
+      El.image (imageSize width) { src = player.picture, description = player.name }
         
 timerButton size msg btnText =
-    button [ height <| px 60, width fill, paddingXY 10 4
+    In.button [ El.height <| El.px 60, El.width El.fill, El.paddingXY 10 4
            , Bord.rounded 4
            , Back.color colorPrimary
            , Font.color white, size
            ]
-        { onPress = Just msg, label = el [ centerX ] <| text btnText }
+        { onPress = Just msg, label = El.el [ El.centerX ] <| El.text btnText }
 
-imageSize model =
-  let sixthWidth = (model.width - 20) // 3
-      proportionalHeight = 570 * sixthWidth // 205
+imageSize width =
+  let proportionalHeight = 570 * width // 205
   in
-  [ height <| px proportionalHeight
-  , width <| px sixthWidth
+  [ El.height <| El.px proportionalHeight
+  , El.width <| El.px width
   ]
 
-fontSize model =
-  Font.size <| model.height // 30
+viewViewable : ViewableModel -> Html Msg
+viewViewable model =
+    let btnFont = Font.size <| model.width // 25
+    in
+    El.layout [ El.height El.fill ] <|
+        El.column [ El.height El.fill ]
+            [ El.wrappedRow [] <| List.map (viewPlayer <| model.width * 10 // 61 ) model.players
+            , El.row [ El.padding 20, El.spacing 10, El.width El.fill ]
+                [ timerButton btnFont StartAll "START ALL"
+                , timerButton btnFont StopAll "STOP ALL"
+                ]
+            , El.el [ El.alignBottom ] <| timerButton btnFont ResetAll "RESET ALL"
+            ]
+
+
 
 view : Model -> Browser.Document Msg
 view model =
-  let ftSize = fontSize model
-  in
     { title = "GoT Timer"
-    , body = [ layout [ height fill ] <|
-          column [ height fill ]
-              [ wrappedRow [] <| List.map (viewPlayer ftSize (imageSize model)) model.players
-              , row [ padding 20, spacing 10, width fill ]
-                  [ timerButton ftSize StartAll "START ALL"
-                  , timerButton ftSize StopAll "STOP ALL"
-                  ]
-              , el [ alignBottom ] <| timerButton ftSize ResetAll "RESET ALL"
-              ]
+    , body = [ case model of
+                   Unviewable _ ->
+                       El.layout [] <| El.text "…"
+
+                   Viewable viewable ->
+                       viewViewable viewable
              ]
     }
 
