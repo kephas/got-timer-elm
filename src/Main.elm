@@ -30,13 +30,19 @@ type alias Player =
     , running : Bool
     }
 
-type alias ViewableModel =
+type alias GameSetup =
+    { players : List Player
+    , defaultTime : Int
+    }
+
+type alias GameView =
     { width : Int
     , height : Int
     , players : List Player
+    , defaultTime : Int
     }
 
-type Model = Unviewable (List Player) | Viewable ViewableModel
+type Model = Unviewable GameSetup | Viewable GameView
 
 
 defaultTime = 3600
@@ -46,7 +52,7 @@ initPlayer : Int -> String -> Player
 initPlayer time name =
     Player name (interpolate "%PUBLIC_URL%/img/family/{0}.jpg" [name]) time False
 
-model0 = Unviewable <| List.map (initPlayer defaultTime) players0
+model0 = Unviewable <| GameSetup (List.map (initPlayer defaultTime) players0) defaultTime
 
 init : () -> ( Model, Cmd Msg )
 init _ =
@@ -68,6 +74,7 @@ type Msg
     | ResetAll
     | Tick Time.Posix
     | Resize Int Int
+    | ChangeDefault String
 
 
 toggleOne : Player -> Player
@@ -92,35 +99,51 @@ tickRunning players =
   List.map (\p -> if p.running then tickOne p else p) players
 
 
+resetOne time player =
+    { player | remainingTime = time, running = False }
+
+resetPlayers game =
+    { game | players = List.map (resetOne game.defaultTime) game.players }
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        Unviewable players ->
+        Unviewable setup ->
             case msg of
                 Resize width height ->
-                    ( Viewable { width = width, height = height, players = players }, Cmd.none )
+                    ( Viewable { width = width, height = height, players = setup.players, defaultTime = setup.defaultTime }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
-        Viewable viewableModel ->
+
+        Viewable game ->
             case msg of
                 Toggle player ->
-                    ( Viewable { viewableModel | players = toggleOnly player viewableModel.players }, Cmd.none)
+                    ( Viewable { game | players = toggleOnly player game.players }, Cmd.none)
 
                 StartAll ->
-                    ( Viewable { viewableModel | players = runAll True viewableModel.players }, Cmd.none)
+                    ( Viewable { game | players = runAll True game.players }, Cmd.none)
 
                 StopAll ->
-                    ( Viewable { viewableModel | players = runAll False viewableModel.players }, Cmd.none)
+                    ( Viewable { game | players = runAll False game.players }, Cmd.none)
 
                 ResetAll ->
-                    ( model0, getViewport)
+                    ( Viewable <| resetPlayers game, Cmd.none)
 
                 Tick _ ->
-                    ( Viewable { viewableModel | players = tickRunning viewableModel.players }, Cmd.none)
+                    ( Viewable { game | players = tickRunning game.players }, Cmd.none)
 
                 Resize width height ->
-                    ( Viewable { viewableModel | height = height, width = width }, Cmd.none)
+                    ( Viewable { game | height = height, width = width }, Cmd.none)
+
+                ChangeDefault timeStr ->
+                    case String.toInt timeStr of
+                        Nothing ->
+                            ( model, Cmd.none )
+
+                        Just time ->
+                            ( Viewable { game | defaultTime = time }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -182,18 +205,25 @@ imageSize width =
   , El.width <| El.px width
   ]
 
-viewViewable : ViewableModel -> Html Msg
-viewViewable model =
-    let btnFont = Font.size <| model.width // 25
+viewGame : GameView -> Html Msg
+viewGame game =
+    let btnFont = Font.size <| game.width // 25
     in
     El.layout [ El.height El.fill ] <|
         El.column [ El.height El.fill ]
-            [ El.wrappedRow [] <| List.map (viewPlayer <| model.width * 10 // 61 ) model.players
+            [ El.wrappedRow [] <| List.map (viewPlayer <| game.width * 10 // 61 ) game.players
             , El.row [ El.padding 20, El.spacing 10, El.width El.fill ]
                 [ timerButton btnFont StartAll "START ALL"
                 , timerButton btnFont StopAll "STOP ALL"
                 ]
-            , El.el [ El.alignBottom ] <| timerButton btnFont ResetAll "RESET ALL"
+            , El.row [ El.alignBottom ]
+                [ timerButton btnFont ResetAll "RESET ALL"
+                , In.text [] { onChange = ChangeDefault
+                             , placeholder = Nothing
+                             , text = String.fromInt game.defaultTime
+                             , label = In.labelHidden ""
+                             }
+                ]
             ]
 
 
@@ -205,8 +235,8 @@ view model =
                    Unviewable _ ->
                        El.layout [] <| El.text "…"
 
-                   Viewable viewable ->
-                       viewViewable viewable
+                   Viewable game ->
+                       viewGame game
              ]
     }
 
